@@ -56,6 +56,7 @@ int main() {
      * inizializzo tutti gli stati con i loro valori
      */
     //definizione stati
+    //----------------------------SANTI-------------------------------------
     node* saintM = malloc(sizeof(node));
     saintM->numberOfPossibilities = 1;
     saintM->followings = calloc((size_t) saintM->numberOfPossibilities, sizeof(node*));
@@ -64,6 +65,7 @@ int main() {
     saintF->numberOfPossibilities = 1;
     saintF->followings = calloc((size_t) saintF->numberOfPossibilities, sizeof(node*));
 
+    //----------------------------INSULTI-------------------------------------
     node* insultM = malloc(sizeof(node));
     insultM->numberOfPossibilities = 3;
     insultM->followings = calloc((size_t) insultM->numberOfPossibilities, sizeof(node*));
@@ -72,6 +74,7 @@ int main() {
     insultF->numberOfPossibilities = 3;
     insultF->followings = calloc((size_t) insultF->numberOfPossibilities, sizeof(node*));
 
+    //----------------------------VERBI-------------------------------------
     node* verbOgg = malloc(sizeof(node));
     verbOgg->numberOfPossibilities = 1; //s,sX
     verbOgg->followings = calloc((size_t) verbOgg->numberOfPossibilities, sizeof(node*));
@@ -80,14 +83,26 @@ int main() {
     verbMezz->numberOfPossibilities = 1; //s,sX
     verbMezz->followings = calloc((size_t) verbMezz->numberOfPossibilities, sizeof(node*));
 
+    //----------------------------COMPLEMENTI-------------------------------------
     node* compOgg = malloc(sizeof(node));
-    compOgg->numberOfPossibilities = 4; //s,sX
+    compOgg->numberOfPossibilities = 2; //s,sX
     compOgg->followings = calloc((size_t) compOgg->numberOfPossibilities, sizeof(node*));
 
     node* compMezz = malloc(sizeof(node));
     compMezz->numberOfPossibilities = 3; //s,sX
     compMezz->followings = calloc((size_t) compMezz->numberOfPossibilities, sizeof(node*));
 
+    node* compSpec = malloc(sizeof(node));
+    compSpec->numberOfPossibilities = 2; //s,sX
+    compSpec->followings = calloc((size_t) compSpec->numberOfPossibilities, sizeof(node*));
+
+    //----------------------------CONGIUNZIONI-------------------------------------
+    node* congiunzioni = malloc(sizeof(node));
+    congiunzioni->numberOfPossibilities = 2; //s,sX
+    congiunzioni->followings = calloc((size_t) congiunzioni->numberOfPossibilities, sizeof(node*));
+
+
+    //----------------------------STATO FINALE-------------------------------------
     node* finale = malloc(sizeof(node));
     finale->numberOfPossibilities = 0; //s,sX
     finale->followings = NULL;
@@ -107,18 +122,27 @@ int main() {
     verbOgg->followings[0] = compOgg;
     verbMezz->followings[0] = compMezz;
 
-    compOgg->followings[0] = compMezz;
-    compOgg->followings[1] = verbOgg;
-    compOgg->followings[2] = verbMezz;
+    //compOgg->followings[0] = compMezz;
+    //compOgg->followings[1] = verbOgg;
+    //compOgg->followings[2] = verbMezz;
+    compOgg->followings[0] = congiunzioni;
+    compOgg->followings[1] = compSpec;
     //compOgg->followings[3] = insultM;
     //compOgg->followings[4] = insultF;
-    compOgg->followings[3] = finale;
+    compOgg->followings[2] = finale;
 
-    compMezz->followings[0] = verbOgg;
-    compMezz->followings[1] = verbMezz;
+    compMezz->followings[0] = congiunzioni;
+    //compMezz->followings[0] = verbOgg;
+    //compMezz->followings[1] = verbMezz;
     //compMezz->followings[2] = insultM;
     //compMezz->followings[3] = insultF;
-    compMezz->followings[2] = finale;
+    compMezz->followings[1] = finale;
+
+    compSpec->followings[0] = congiunzioni;
+    compSpec->followings[1] = finale;
+
+    congiunzioni->followings[0] = verbOgg;
+    congiunzioni->followings[1] = verbMezz;
 
     //Generazione
     node* curr = NULL;
@@ -132,6 +156,9 @@ int main() {
     verbMezz->associatedFile = fopen("../verbi/verbi_C_mezzo.txt","r");
     compOgg->associatedFile = fopen("../complementi/C_oggetto.txt","r");
     compMezz->associatedFile = fopen("../complementi/C_mezzo.txt","r");
+    congiunzioni->associatedFile = fopen("../congiunzioni/congiunzioni.txt","r");
+    compSpec->associatedFile = fopen("../complementi/C_specificazione.txt","r");
+
     //fclose
 
     int randomic = generateRandomNumber(1,10);
@@ -166,7 +193,7 @@ int main() {
             if (strcmp(risultato[l], "") != 0)
                 printf("%s ", risultato[l]);
         }
-        printf("\n");
+        printf(".\n");
 
         //pulisco il vettore generato
         for (int j = 0; j < lunghezza; ++j) {
