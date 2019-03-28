@@ -5,440 +5,233 @@
 #include <spandsp.h>
 #include <unistd.h>
 
-#define NUMBER_OF_COMPLEMENTS   7
-#define NUMBER_OF_VERBS         7
-#define CONST 100
-void printRandmWordFromFile(char **vettoreStringhe, int numeroElementiNelFile, int *vettoreOccupazionale);
+typedef struct node {
+    int numberOfPossibilities;
+    struct node** followings;
+    FILE* associatedFile;
+}node;
+
+char* extractRandomWordFromFile(FILE* file);
+int generateRandomNumber(int bottom, int top);
 
 /**
- * S santo
- * I insulto
- * X quello che uso per produrre
- * V verbo
- * C complemento (poi si diversificherà nei vari complementi, con verbi transitivi e intransitivi)
  *
- * PROVO A DEFINIRE UNA GRAMMATICA CHE E' MOLTO PIU' FACILMENTE DA ME CAPIBILE E IMPLEMENTABILE:
+ * Grammatica usata per produrre le bestemmie
+ *
+ * S,s santo
+ * I,i insulto
+ * V verbo
+ * C
  *
  * S -> s
- * S -> sX
- * X -> IX
- * X -> vcX
- * C -> cX
- *
- * Con questa grammatica base posso generare bestemmie quantomeno carine, decidendo prima a priori una lunghezza massima
- * che esse devono raggiungere.
+ * S -> sI
+ * I -> iV
+ * V -> C
+ * C -> cV
  */
 
 int main() {
 
-    FILE* saintsM = NULL;
-    FILE* saintsF = NULL;
-    FILE* insultsM = NULL;
-    FILE* insultsF = NULL;
-    FILE* verbsCoggetto = NULL;
-    FILE* verbsCMezzo = NULL;
-    FILE* complementsOggetto = NULL;
-    FILE* complementsMezzo = NULL;
-
-    //SANTI
-    char *santoM = "Sm";
-    char *santoF = "Sf";
-    //INSULTI
-    char *insultoM = "Im";
-    char *insultoF = "If";
-    //VERBI
-    char *verboCOggetto = "Voggetto";
-    char *verboCSpecificazione = "Vspecificazione";
-    char *verboCDenominazione = "Vdenominazione";
-    char *verboCPartitivo = "Vpartitivo";
-    char *verboCParagone = "Vparagone";
-    char *verboCTermine = "Vtermine";
-    char *verboCMezzo = "Vmezzo";
-    //COMPLEMENTI
-    char *complementoOggetto = "Coggetto";
-    char *complementoSpecificazione = "Cspecificaizone";
-    char *complementoDenominazione = "Cdenominazione";
-    char *complementoPartitivo = "Cpartitivo";
-    char *complementoParagone = "CParagone";
-    char *complementoTermine = "Ctermine";
-    char *complementoMezzo = "Cmezzo";
-    //NONTERMINALI PER INSERIMENTO
-    char *inserimentoInsultoMaschile = "Xim";
-    char *inserimentoInsultoFemminile = "Xif";
-    char *inserimento = "X";
-
-    srand((unsigned)time(NULL));
-    int randomic = rand()%10+1;
-
-    char gender;
-
-    char *current;
-
-    if(randomic %2 == 0){
-        current = santoM;
-        gender = 'M';
-    }
-    else{
-        current = santoF;
-        gender = 'F';
-    }
-
     int numeroProduzioni = 0;
-    char *input = malloc(sizeof(int));
+    char *input = (char*) malloc(sizeof(int));
     //printf("Inserisci numero produzioni: ");
     scanf("%s",input);
     numeroProduzioni = atoi(input);
 
     int lunghezza = 0;
-    input = malloc(sizeof(int));
+    input = (char*) malloc(sizeof(int));
     //printf("Inserisci Lunghezza: ");
     scanf("%s",input);
     lunghezza = atoi(input);
 
 
-    char *risultati[numeroProduzioni][lunghezza];
     char *risultato[lunghezza];
-    for (int l = 0; l < lunghezza; ++l)
-        risultato[l] = malloc(CONST);
-
-    for (int m = 0; m < numeroProduzioni; ++m) {
-        for (int i = 0; i < lunghezza; ++i) {
-            risultati[m][i] = malloc(CONST);
-        }
+    for (int j = 0; j < lunghezza; ++j) {
+        risultato[j] = "";
     }
 
-    strcpy(risultato[0],current);
-    strcpy(risultato[1],inserimento);
-    int scorrimento = 1;
-    int produzioni = 0;
 
-    bool condition = true;
+    /**
+     * Inizializzazione:
+     * inizializzo tutti gli stati con i loro valori
+     */
+    //definizione stati
+    node* saintM = malloc(sizeof(node));
+    saintM->numberOfPossibilities = 1;
+    saintM->followings = calloc((size_t) saintM->numberOfPossibilities, sizeof(node*));
 
-    for (int i = 0; i < numeroProduzioni; ++i) {
-        //sleep(1);
-        while (condition){
-            srand((unsigned)time(NULL)+rand());
-            randomic = rand()%100+1;
-            if(strcmp(risultato[scorrimento],inserimento) == 0){
-                if(randomic%2 == 0){
-                    if(gender == 'M')
-                        strcpy(risultato[scorrimento],insultoM);
-                    else
-                        strcpy(risultato[scorrimento],insultoF);
-                    strcpy(risultato[scorrimento+1],inserimento);
-                    scorrimento++;
-                } else{
-                    if(randomic % NUMBER_OF_VERBS == 0){
-                        strcpy(risultato[scorrimento],verboCOggetto);
-                        strcpy(risultato[scorrimento+1],complementoOggetto);
-                    }else if(randomic % NUMBER_OF_VERBS == 1){
-                        strcpy(risultato[scorrimento],verboCOggetto);
-                        strcpy(risultato[scorrimento+1],complementoOggetto);
-                    }else if(randomic % NUMBER_OF_VERBS == 2){
-                        strcpy(risultato[scorrimento],verboCMezzo);
-                        strcpy(risultato[scorrimento+1],complementoMezzo);
-                    }else if(randomic % NUMBER_OF_VERBS == 3){
-                        strcpy(risultato[scorrimento],verboCOggetto);
-                        strcpy(risultato[scorrimento+1],complementoOggetto);
-                    }else if(randomic % NUMBER_OF_VERBS == 4){
-                        strcpy(risultato[scorrimento],verboCOggetto);
-                        strcpy(risultato[scorrimento+1],complementoOggetto);
-                    }else if(randomic % NUMBER_OF_VERBS == 5){
-                        strcpy(risultato[scorrimento],verboCOggetto);
-                        strcpy(risultato[scorrimento+1],complementoOggetto);
-                    }else if(randomic % NUMBER_OF_VERBS == 6){
-                        strcpy(risultato[scorrimento],verboCOggetto);
-                        strcpy(risultato[scorrimento+1],complementoOggetto);
-                    }
-                    strcpy(risultato[scorrimento+2],inserimento);
-                    scorrimento+=2;
-                }
-            }
-            if (scorrimento+2 >= lunghezza)
-                condition = false;
-        }
-        //stampo cosa ha generato la grammatica
-        //printf("\nLa grammatica ha generato: ");
-        //for (int k = 0; k < lunghezza; ++k)
-            //printf("%s",risultato[k]);
-        //salvo cioò che la grammatica ha generato
-        for (int k = 0; k < lunghezza; ++k)
-            strcpy(risultati[produzioni][k],risultato[k]);
-        produzioni++;
-        if(randomic %2 == 0){
-            current = santoM;
-            gender = 'M';
-        }
-        else{
-            current = santoF;
-            gender = 'F';
-        }
-        strcpy(risultato[0],current);
-        strcpy(risultato[1],inserimento);
-        scorrimento = 1;
-        for (int j = scorrimento+1; j < lunghezza; ++j) {
-            strcpy(risultato[j],"");
-        }
-        //printf("\nLa grammatica ha generato: %s",risultato);
-        condition = true;
-    }
+    node* saintF = malloc(sizeof(node));
+    saintF->numberOfPossibilities = 1;
+    saintF->followings = calloc((size_t) saintF->numberOfPossibilities, sizeof(node*));
+
+    node* insultM = malloc(sizeof(node));
+    insultM->numberOfPossibilities = 3;
+    insultM->followings = calloc((size_t) insultM->numberOfPossibilities, sizeof(node*));
+
+    node* insultF = malloc(sizeof(node));
+    insultF->numberOfPossibilities = 3;
+    insultF->followings = calloc((size_t) insultF->numberOfPossibilities, sizeof(node*));
+
+    node* verbOgg = malloc(sizeof(node));
+    verbOgg->numberOfPossibilities = 1; //s,sX
+    verbOgg->followings = calloc((size_t) verbOgg->numberOfPossibilities, sizeof(node*));
+
+    node* verbMezz = malloc(sizeof(node));
+    verbMezz->numberOfPossibilities = 1; //s,sX
+    verbMezz->followings = calloc((size_t) verbMezz->numberOfPossibilities, sizeof(node*));
+
+    node* compOgg = malloc(sizeof(node));
+    compOgg->numberOfPossibilities = 4; //s,sX
+    compOgg->followings = calloc((size_t) compOgg->numberOfPossibilities, sizeof(node*));
+
+    node* compMezz = malloc(sizeof(node));
+    compMezz->numberOfPossibilities = 3; //s,sX
+    compMezz->followings = calloc((size_t) compMezz->numberOfPossibilities, sizeof(node*));
+
+    node* finale = malloc(sizeof(node));
+    finale->numberOfPossibilities = 0; //s,sX
+    finale->followings = NULL;
+
+    //definizione archi
+    saintM->followings[0] = insultM;
+    saintF->followings[0] = insultF;
+
+    insultM->followings[0] = verbOgg;
+    insultM->followings[1] = verbMezz;
+    insultM->followings[2] = finale;
+
+    insultF->followings[0] = verbOgg;
+    insultF->followings[1] = verbMezz;
+    insultF->followings[2] = finale;
+
+    verbOgg->followings[0] = compOgg;
+    verbMezz->followings[0] = compMezz;
+
+    compOgg->followings[0] = compMezz;
+    compOgg->followings[1] = verbOgg;
+    compOgg->followings[2] = verbMezz;
+    //compOgg->followings[3] = insultM;
+    //compOgg->followings[4] = insultF;
+    compOgg->followings[3] = finale;
+
+    compMezz->followings[0] = verbOgg;
+    compMezz->followings[1] = verbMezz;
+    //compMezz->followings[2] = insultM;
+    //compMezz->followings[3] = insultF;
+    compMezz->followings[2] = finale;
+
+    //Generazione
+    node* curr = NULL;
 
     //traduzione
-    saintsM = fopen("../santiM.txt","r");
-    saintsF = fopen("../santiF.txt","r");
-    insultsM = fopen("../insultiM.txt","r");
-    insultsF = fopen("../insultiF.txt","r");
-    verbsCoggetto = fopen("../verbi_C_oggetto.txt","r");
-    verbsCMezzo = fopen("../verbi_C_mezzo.txt","r");
-    complementsOggetto = fopen("../C_oggetto.txt","r");
-    complementsMezzo = fopen("../C_mezzo.txt","r");
+    saintM->associatedFile = fopen("../santi/santiM.txt","r");
+    saintF->associatedFile = fopen("../santi/santiF.txt","r");
+    insultM->associatedFile = fopen("../insulti/insultiM.txt","r");
+    insultF->associatedFile = fopen("../insulti/insultiF.txt","r");
+    verbOgg->associatedFile = fopen("../verbi/verbi_C_oggetto.txt","r");
+    verbMezz->associatedFile = fopen("../verbi/verbi_C_mezzo.txt","r");
+    compOgg->associatedFile = fopen("../complementi/C_oggetto.txt","r");
+    compMezz->associatedFile = fopen("../complementi/C_mezzo.txt","r");
+    //fclose
 
-    char *trash = malloc(50);
+    int randomic = generateRandomNumber(1,10);
+    if(randomic %2 == 0)
+        curr = saintM;
+    else
+        curr = saintF;
 
-    //prendo direttamente subito tutto il contenuto dei file e lo salvo in vettori
-    //santiM
-    free(input);
-    input = malloc(50);
-    fscanf(saintsM,"%s",input);
-    int numeroSantiFaschi = atoi(input);
-    //printf("\nNumero santi maschi %d",numeroSantiFaschi);
-    char *santiM[numeroSantiFaschi];
-    fgets(trash,50,saintsM);
-    for (int n = 0; n < numeroSantiFaschi; ++n) {
-        santiM[n] = malloc(50);
-        fgets(santiM[n],50,saintsM);
-        for (int j = 0; j < 50; ++j) {
-            if(santiM[n][j] == '\n' || santiM[n][j] == '\r')
-                santiM[n][j]='\0';
-        }
-    }
-    int vOccSM[numeroSantiFaschi];
-    for (int i1 = 0; i1 < numeroSantiFaschi; ++i1) {
-        vOccSM[i1] = 0;
-        //printf("-%s, ",santiM[i1]);
-    }
-    //printf("\n");
-    //santiF
-    free(input);
-    input = malloc(50);
-    fscanf(saintsF,"%s",input);
-    int numeroSantiFemmine = atoi(input);
-    //printf("\nNumero santi maschi %d",numeroSantiFaschi);
-    fgets(trash,50,saintsF);
-    char *santiF[numeroSantiFemmine];
-    for (int n = 0; n < numeroSantiFemmine; ++n) {
-        santiF[n] = malloc(50);
-        fgets(santiF[n],50,saintsF);
-        for (int j = 0; j < 50; ++j) {
-            if(santiF[n][j] == '\n' || santiF[n][j] == '\r')
-                santiF[n][j]='\0';
-        }
-    }
-    int vOccSF[numeroSantiFemmine];
-    for (int i1 = 0; i1 < numeroSantiFemmine; ++i1) {
-        vOccSF[i1] = 0;
-        //printf("-%s, ",santiF[i1]);
-    }
-    //InsultiM
-    free(input);
-    input = malloc(50);
-    fscanf(insultsM,"%s",input);
-    int numeroInsultiM = atoi(input);
-    fgets(trash,50,insultsM);
-    char *insultiM[numeroInsultiM];
-    for (int n = 0; n < numeroInsultiM; ++n) {
-        insultiM[n] = malloc(50);
-        fgets(insultiM[n],50,insultsM);
-        for (int j = 0; j < 50; ++j) {
-            if(insultiM[n][j] == '\n' || insultiM[n][j] == '\r')
-                insultiM[n][j]='\0';
-        }
-    }
-    int vOccIM[numeroInsultiM];
-    for (int i1 = 0; i1 < numeroInsultiM; ++i1) {
-        vOccIM[i1] = 0;
-    }
-    //InsultiF
-    free(input);
-    input = malloc(50);
-    fscanf(insultsF,"%s",input);
-    int numeroInsultiF = atoi(input);
-    fgets(trash,50,insultsF);
-    char *insultiF[numeroInsultiF];
-    for (int n = 0; n < numeroInsultiF; ++n) {
-        insultiF[n] = malloc(50);
-        fgets(insultiF[n],50,insultsF);
-        for (int j = 0; j < 50; ++j) {
-            if(insultiF[n][j] == '\n' || insultiF[n][j] == '\r')
-                insultiF[n][j]='\0';
-        }
-    }
-    int vOccIF[numeroInsultiF];
-    for (int i1 = 0; i1 < numeroInsultiF; ++i1) {
-        vOccIF[i1] = 0;
-    }
-    //Verbi Complemento Oggetto
-    free(input);
-    input = malloc(50);
-    fscanf(verbsCoggetto,"%s",input);
-    int numeroVerbiCOggetto = atoi(input);
-    fgets(trash,50,verbsCoggetto);
-    char *verbiCOggetto[numeroVerbiCOggetto];
-    for (int n = 0; n < numeroVerbiCOggetto; ++n) {
-        verbiCOggetto[n] = malloc(50);
-        fgets(verbiCOggetto[n],50,verbsCoggetto);
-        for (int j = 0; j < 50; ++j) {
-            if(verbiCOggetto[n][j] == '\n' || verbiCOggetto[n][j] == '\r')
-                verbiCOggetto[n][j]='\0';
-        }
-    }
-    int vOccVCO[numeroVerbiCOggetto];
-    for (int i1 = 0; i1 < numeroVerbiCOggetto; ++i1) {
-        vOccVCO[i1] = 0;
-    }
-    //Verbi Complemento Mezzo
-    free(input);
-    input = malloc(50);
-    fscanf(verbsCMezzo,"%s",input);
-    int numeroVerbiCMezzo = atoi(input);
-    fgets(trash,50,verbsCMezzo);
-    char *verbiCMezzo[numeroVerbiCMezzo];
-    for (int n = 0; n < numeroVerbiCMezzo; ++n) {
-        verbiCMezzo[n] = malloc(50);
-        fgets(verbiCMezzo[n],50,verbsCMezzo);
-        for (int j = 0; j < 50; ++j) {
-            if(verbiCMezzo[n][j] == '\n' || verbiCMezzo[n][j] == '\r')
-                verbiCMezzo[n][j]='\0';
-        }
-    }
-    int vOccVCM[numeroVerbiCMezzo];
-    for (int i1 = 0; i1 < numeroVerbiCMezzo; ++i1) {
-        vOccVCM[i1] = 0;
-    }
-    //Complementi Oggetto
-    free(input);
-    input = malloc(50);
-    fscanf(complementsOggetto,"%s",input);
-    int numeroComplementiOggetto = atoi(input);
-    fgets(trash,50,complementsOggetto);
-    char *complementiOggetto[numeroComplementiOggetto];
-    for (int n = 0; n < numeroComplementiOggetto; ++n) {
-        complementiOggetto[n] = malloc(50);
-        fgets(complementiOggetto[n],50,complementsOggetto);
-        for (int j = 0; j < 50; ++j) {
-            if(complementiOggetto[n][j] == '\n' || complementiOggetto[n][j] == '\r')
-                complementiOggetto[n][j]='\0';
-        }
-    }
-    int vOccCO[numeroComplementiOggetto];
-    for (int i1 = 0; i1 < numeroComplementiOggetto; ++i1) {
-        vOccCO[i1] = 0;
-    }
-    //Complementi Mezzo
-    fscanf(complementsMezzo,"%s",input);
-    int numeroComplementiMezzo = atoi(input);
-    fgets(trash,50,complementsMezzo);
-    char *complementiMezzo[numeroComplementiMezzo];
-    for (int n = 0; n < numeroComplementiMezzo; ++n) {
-        complementiMezzo[n] = malloc(50);
-        fgets(complementiMezzo[n],50,complementsMezzo);
-        for (int j = 0; j < 50; ++j) {
-            if(complementiMezzo[n][j] == '\n' || complementiMezzo[n][j] == '\r')
-                complementiMezzo[n][j]='\0';
-        }
-    }
-    int vOccCM[numeroComplementiMezzo];
-    for (int i1 = 0; i1 < numeroComplementiMezzo; ++i1) {
-        vOccCM[i1] = 0;
-    }
-    char *extracted = malloc(20);
+    //ripeto ola generazione il numero desiderato di volte
+    for (int k = 0; k < numeroProduzioni; ++k) {
+        //genero produzione
+        for (int i = 0; i < lunghezza && curr != finale && curr != NULL; i++) {
 
-    printf("\n");
+            node* prev = curr;
+            risultato[i] = extractRandomWordFromFile(curr->associatedFile);
 
-    for (int k = 0; k < produzioni; ++k) {
-        fflush(stdout);
-        //printf("\nECCONE UNA: ");
-        for (int i = 0; i < lunghezza; ++i) {
-            if(strcmp(risultati[k][i], santoM) == 0 ){
-                printRandmWordFromFile(santiM,numeroSantiFaschi,vOccSM);
-            }else if (strcmp(risultati[k][i], santoF) == 0 ){
-                printRandmWordFromFile(santiF,numeroSantiFemmine,vOccSF);
+            if(curr == finale) break;
+            randomic = generateRandomNumber(0,curr->numberOfPossibilities);
+            if(curr != saintM && curr != saintF) {
+                curr = curr->followings[randomic];
             }
-            else if(strcmp(risultati[k][i], insultoM) == 0 ){
-                printRandmWordFromFile(insultiM,numeroInsultiM,vOccIM);
-            }else if(strcmp(risultati[k][i], insultoF) == 0 ){
-                printRandmWordFromFile(insultiF,numeroInsultiF,vOccIF);
+            else {
+                curr = curr->followings[0];
             }
-            else if(strcmp(risultati[k][i], verboCOggetto) == 0 ){
-                printRandmWordFromFile(verbiCOggetto,numeroVerbiCOggetto,vOccVCO);
-            }else if(strcmp(risultati[k][i], verboCMezzo) == 0 ){
-                printRandmWordFromFile(verbiCMezzo,numeroVerbiCMezzo,vOccVCM);
-            }
-            else if(strcmp(risultati[k][i], complementoOggetto) == 0 ){
-                printRandmWordFromFile(complementiOggetto,numeroComplementiOggetto,vOccCO);
-            }else if(strcmp(risultati[k][i], complementoMezzo) == 0 ){
-                printRandmWordFromFile(complementiMezzo,numeroComplementiMezzo,vOccCM);
-            }
-            else if(risultati[k][i] == inserimento){
-                //non fare un bel cazzo di niente
-            } else{
-                printf("\n");
-                break;
-            }
+
+
         }
-        //resetto i vettori occupazionali
-        for (int i1 = 0; i1 < numeroSantiFaschi; ++i1)
-            vOccSM[i1] = 0;
-        for (int i1 = 0; i1 < numeroSantiFemmine; ++i1)
-            vOccSF[i1] = 0;
-        for (int i1 = 0; i1 < numeroInsultiM; ++i1)
-            vOccIM[i1] = 0;
-        for (int i1 = 0; i1 < numeroInsultiM; ++i1)
-            vOccIF[i1] = 0;
-        for (int i1 = 0; i1 < numeroVerbiCOggetto; ++i1)
-            vOccVCO[i1] = 0;
-        for (int i1 = 0; i1 < numeroVerbiCMezzo; ++i1)
-            vOccVCM[i1] = 0;
-        for (int i1 = 0; i1 < numeroComplementiOggetto; ++i1)
-            vOccCO[i1] = 0;
-        for (int i1 = 0; i1 < numeroComplementiMezzo; ++i1)
-            vOccCM[i1] = 0;
+
+        //stampo generazione
+        //printf("\nGenerazione: ");
+        for (int l = 0; l < lunghezza; ++l) {
+            if (strcmp(risultato[l], "") != 0)
+                printf("%s ", risultato[l]);
+        }
+        printf("\n");
+
+        //pulisco il vettore generato
+        for (int j = 0; j < lunghezza; ++j) {
+            risultato[j] = "";
+        }
+        //vedo da dove ripartire
+        randomic = generateRandomNumber(1,10);
+        if(randomic %2 == 0){
+            curr = saintM;
+            //printf("\ncurr M");
+        }
+        else{
+            curr = saintF;
+            //printf("\ncurr F");
+        }
     }
 
-    fclose(saintsM);
-    fclose(saintsF);
-    fclose(insultsM);
-    fclose(insultsF);
-    fclose(verbsCoggetto);
-    fclose(verbsCMezzo);
-    fclose(complementsOggetto);
-    fclose(complementsMezzo);
+    //chiudo tutti i files
+    fclose(saintM->associatedFile);
+    fclose(saintF->associatedFile);
+    fclose(insultM->associatedFile);
+    fclose(insultF->associatedFile);
+    fclose(verbOgg->associatedFile);
+    fclose(verbMezz->associatedFile);
+    fclose(compOgg->associatedFile);
+    fclose(compMezz->associatedFile);
+    
     return 0;
 }
 
-void printRandmWordFromFile(char **vettoreStringhe, int numeroElementiNelFile, int *vettoreOccupazionale){
+int generateRandomNumber(int bottom, int top) {
 
-    srand((unsigned)time(NULL)+rand()+rand()+rand()+rand());
-    int randomic = rand()%numeroElementiNelFile;
+    srand((unsigned) time(NULL) + rand() + rand() + rand() + rand());
+    double myRand = rand()/(1.0 + RAND_MAX);
+    int range = top - bottom;
+    int myRand_scaled = (int) ((myRand * range) + bottom);
+    return myRand_scaled;
 
-    while(vettoreOccupazionale[randomic] == 1){
-        randomic++;
-        if(randomic == numeroElementiNelFile)
-            randomic = 1;
+    //return rand() % top + bottom;
+}
+
+char* extractRandomWordFromFile(FILE* file){
+
+    //torno all'inizio del file
+    fseek(file,0,0);
+    //variabile temporanea di lettura stringhe
+    char* read = calloc(50, sizeof(char));
+    //leggo il numero di elementi
+    read = fgets(read,50,file);
+    //lo trasformo in un intero
+    int numberOfElements = atoi(read);
+    //genero un numero casuale tra 0 e il numero di elementi nel file
+    int randomic = generateRandomNumber(1,numberOfElements);
+    //leggo randomic volte, così da leggere una parola casuale dal file
+    char *extracted = calloc(50, sizeof(char));
+
+    for (int i = 0; i < randomic; ++i)
+        fgets(extracted,50,file);
+
+    for (int j = 0; j < 50; ++j) {
+        if(extracted[j] == '\n' || extracted[j] == '\r')
+            extracted[j]='\0';
     }
-    printf("%s ",vettoreStringhe[randomic]);
-    vettoreOccupazionale[randomic] = 1;
-//    fseek(file,0,0);
-//    for (int i = 0; i < randomic; ++i) {
-//        //fscanf(file,"%[^\n]s",extracted);
-//        //fscanf(file,"%[^\n]s",extracted);
-//        //fscanf(file,"%[^\n]",extracted);
-//        fgets(extracted,50,file);
-//        for (int j = 0; j < 50; ++j) {
-//            if(extracted[j] == '\n' || extracted[j] == '\r')
-//                extracted[j]='\0';
-//        }
-//        //printf("extracted: %s ",extracted);
-//    }
-//    printf("%s ",extracted);
+    //printf("\n%s ",extracted);
+    free(read);
+    //free(extracted);
+    return extracted;
 }
