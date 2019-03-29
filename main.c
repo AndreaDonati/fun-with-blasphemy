@@ -5,13 +5,29 @@
 #include <spandsp.h>
 #include <unistd.h>
 
+/**
+ * Struttura che identifica un nodo. Ogni nodo rappresenta uno stato della macchina
+ */
 typedef struct node {
-    int numberOfPossibilities;
-    struct node** followings;
-    FILE* associatedFile;
+    int numberOfPossibilities;              //il numero di archi uscenti dallo stato
+    struct node** followings;               //vettore di puntatore agli stati successivi
+    FILE* associatedFile;                   //puntatore al file contenente le parole associate allo stato
 }node;
 
+/**
+ * @param file: puntatore al file contenente le parole associate allo stato.
+ *              In generale, il file deve essere formattato con un numero come prima riga
+ *              e nelle seguenti righe delle stringhe. Il numero in prima riga
+ *              deve essere <= numero di stringhe nel file.
+ * @return      una stringa estratta casualmente dal file.
+ */
 char* extractRandomWordFromFile(FILE* file);
+
+/**
+ * @param bottom: il limite minimo della generazione casuale
+ * @param top: il limite massimo della generazione casuale
+ * @return
+ */
 int generateRandomNumber(int bottom, int top);
 
 /**
@@ -28,6 +44,8 @@ int generateRandomNumber(int bottom, int top);
  * I -> iV
  * V -> C
  * C -> cV
+ *
+ * La grammatica è implementata con la corrispondente macchina a stati finiti non deterministica.
  */
 
 int main() {
@@ -44,7 +62,7 @@ int main() {
     scanf("%s",input);
     lunghezza = atoi(input);
 
-
+    //inizializzazione del risultato finale
     char *risultato[lunghezza];
     for (int j = 0; j < lunghezza; ++j) {
         risultato[j] = "";
@@ -67,11 +85,11 @@ int main() {
 
     //----------------------------INSULTI-------------------------------------
     node* insultM = malloc(sizeof(node));
-    insultM->numberOfPossibilities = 3;
+    insultM->numberOfPossibilities = 4;
     insultM->followings = calloc((size_t) insultM->numberOfPossibilities, sizeof(node*));
 
     node* insultF = malloc(sizeof(node));
-    insultF->numberOfPossibilities = 3;
+    insultF->numberOfPossibilities = 4;
     insultF->followings = calloc((size_t) insultF->numberOfPossibilities, sizeof(node*));
 
     //----------------------------VERBI-------------------------------------
@@ -83,10 +101,18 @@ int main() {
     verbMezz->numberOfPossibilities = 1; //s,sX
     verbMezz->followings = calloc((size_t) verbMezz->numberOfPossibilities, sizeof(node*));
 
+    node* verbLuogo = malloc(sizeof(node));
+    verbLuogo->numberOfPossibilities = 1; //s,sX
+    verbLuogo->followings = calloc((size_t) verbLuogo->numberOfPossibilities, sizeof(node*));
+
     //----------------------------COMPLEMENTI-------------------------------------
     node* compOgg = malloc(sizeof(node));
-    compOgg->numberOfPossibilities = 2; //s,sX
+    compOgg->numberOfPossibilities = 3; //s,sX
     compOgg->followings = calloc((size_t) compOgg->numberOfPossibilities, sizeof(node*));
+
+    node* compOggPoiLuogo = malloc(sizeof(node));
+    compOggPoiLuogo->numberOfPossibilities = 1; //s,sX
+    compOggPoiLuogo->followings = calloc((size_t) compOggPoiLuogo->numberOfPossibilities, sizeof(node*));
 
     node* compMezz = malloc(sizeof(node));
     compMezz->numberOfPossibilities = 3; //s,sX
@@ -95,6 +121,10 @@ int main() {
     node* compSpec = malloc(sizeof(node));
     compSpec->numberOfPossibilities = 2; //s,sX
     compSpec->followings = calloc((size_t) compSpec->numberOfPossibilities, sizeof(node*));
+
+    node* compLuogo = malloc(sizeof(node));
+    compLuogo->numberOfPossibilities = 3; //s,sX
+    compLuogo->followings = calloc((size_t) compLuogo->numberOfPossibilities, sizeof(node*));
 
     //----------------------------CONGIUNZIONI-------------------------------------
     node* congiunzioni = malloc(sizeof(node));
@@ -113,14 +143,17 @@ int main() {
 
     insultM->followings[0] = verbOgg;
     insultM->followings[1] = verbMezz;
-    insultM->followings[2] = finale;
+    insultM->followings[2] = verbLuogo;
+    insultM->followings[3] = finale;
 
     insultF->followings[0] = verbOgg;
     insultF->followings[1] = verbMezz;
-    insultF->followings[2] = finale;
+    insultF->followings[2] = verbLuogo;
+    insultF->followings[3] = finale;
 
     verbOgg->followings[0] = compOgg;
     verbMezz->followings[0] = compMezz;
+    verbLuogo->followings[0] = compOggPoiLuogo;
 
     //compOgg->followings[0] = compMezz;
     //compOgg->followings[1] = verbOgg;
@@ -130,6 +163,8 @@ int main() {
     //compOgg->followings[3] = insultM;
     //compOgg->followings[4] = insultF;
     compOgg->followings[2] = finale;
+
+    compOggPoiLuogo->followings[0] = compLuogo;
 
     compMezz->followings[0] = congiunzioni;
     //compMezz->followings[0] = verbOgg;
@@ -141,25 +176,31 @@ int main() {
     compSpec->followings[0] = congiunzioni;
     compSpec->followings[1] = finale;
 
+    compLuogo->followings[0] = compSpec;
+    compLuogo->followings[1] = congiunzioni;
+    compLuogo->followings[2] = finale;
+
     congiunzioni->followings[0] = verbOgg;
     congiunzioni->followings[1] = verbMezz;
 
-    //Generazione
-    node* curr = NULL;
 
-    //traduzione
+    //Apro tutti i file necessari alla produzione
     saintM->associatedFile = fopen("../santi/santiM.txt","r");
     saintF->associatedFile = fopen("../santi/santiF.txt","r");
     insultM->associatedFile = fopen("../insulti/insultiM.txt","r");
     insultF->associatedFile = fopen("../insulti/insultiF.txt","r");
     verbOgg->associatedFile = fopen("../verbi/verbi_C_oggetto.txt","r");
     verbMezz->associatedFile = fopen("../verbi/verbi_C_mezzo.txt","r");
+    verbLuogo->associatedFile = fopen("../verbi/verbi_C_luogo.txt","r");
     compOgg->associatedFile = fopen("../complementi/C_oggetto.txt","r");
     compMezz->associatedFile = fopen("../complementi/C_mezzo.txt","r");
     congiunzioni->associatedFile = fopen("../congiunzioni/congiunzioni.txt","r");
     compSpec->associatedFile = fopen("../complementi/C_specificazione.txt","r");
+    compLuogo->associatedFile = fopen("../complementi/C_luogo.txt","r");
+    compOggPoiLuogo->associatedFile = compOgg->associatedFile;
 
-    //fclose
+    //Generazione
+    node* curr = NULL;
 
     int randomic = generateRandomNumber(1,10);
     if(randomic %2 == 0)
@@ -167,12 +208,11 @@ int main() {
     else
         curr = saintF;
 
-    //ripeto ola generazione il numero desiderato di volte
+    //ripeto la generazione il numero desiderato di volte
     for (int k = 0; k < numeroProduzioni; ++k) {
         //genero produzione
         for (int i = 0; i < lunghezza && curr != finale && curr != NULL; i++) {
 
-            node* prev = curr;
             risultato[i] = extractRandomWordFromFile(curr->associatedFile);
 
             if(curr == finale) break;
@@ -203,15 +243,13 @@ int main() {
         randomic = generateRandomNumber(1,10);
         if(randomic %2 == 0){
             curr = saintM;
-            //printf("\ncurr M");
         }
         else{
             curr = saintF;
-            //printf("\ncurr F");
         }
     }
 
-    //chiudo tutti i files
+    //chiudo tutti i file aperti
     fclose(saintM->associatedFile);
     fclose(saintF->associatedFile);
     fclose(insultM->associatedFile);
@@ -226,12 +264,29 @@ int main() {
 
 int generateRandomNumber(int bottom, int top) {
 
+    //alternativa per generare numeri casuali uniformemente distribuiti tra bottom e top
+    //int range = top - bottom + 1;
+    // Largest value that when multiplied by "range"
+    // is less than or equal to RAND_MAX
+    //int chunkSize = (RAND_MAX) / range;
+    //int endOfLastChunk = chunkSize * range;
+    //int r = rand();
+    //while(r >= endOfLastChunk){
+    //    r = rand();
+    //}
+    //return top + r / chunkSize;
+
+
+
+    //nel seguente modo dovrei generare numeri casuali uniformemente distribuiti
+    //nell'intervallo [bottom;top]
     srand((unsigned) time(NULL) + rand() + rand() + rand() + rand());
     double myRand = rand()/(1.0 + RAND_MAX);
     int range = top - bottom;
     int myRand_scaled = (int) ((myRand * range) + bottom);
     return myRand_scaled;
-
+//
+    //un altro metodo di generazione numeri casuali
     //return rand() % top + bottom;
 }
 
@@ -257,8 +312,8 @@ char* extractRandomWordFromFile(FILE* file){
         if(extracted[j] == '\n' || extracted[j] == '\r')
             extracted[j]='\0';
     }
-    //printf("\n%s ",extracted);
+    //debug
+        //printf("\n%s ",extracted);
     free(read);
-    //free(extracted);
     return extracted;
 }
